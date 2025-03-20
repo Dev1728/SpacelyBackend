@@ -20,9 +20,15 @@ const userSchema = new mongoose.Schema(
             type:String,
             required:[true,"password is required"]
         },
-        Token:{
-            type:String,
-            default:null
+        otp: { 
+            type:Number 
+        }, 
+        otpExpires: { 
+            type: Date 
+        },
+        isOTPVerified:{
+            type:Boolean,
+            default:false,
         }
     },
     {timestamps:true}
@@ -36,8 +42,8 @@ userSchema.pre("save",async function(next){
     next()
 })
 
-userSchema.methods.generateToken = function () {
-    return jwt.sign(
+userSchema.methods.generateToken =async function () {
+    return await jwt.sign(
         { _id: this._id, email: this.email}, 
         process.env.TOKEN_SECRET, 
         { expiresIn: process.env.TOKEN_EXPIRY }

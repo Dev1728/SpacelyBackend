@@ -2,9 +2,12 @@ import {asyncHandler} from  '../utils/asyncHandler.js'
 import {ApiError} from '../utils/ApiError.js'
 import {User} from '../models/user.models.js'
 import { ApiResponse } from '../utils/ApiResponse.js'
+import nodemailer from 'nodemailer'
 import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv'
 import bcrypt from'bcrypt'
+import crypto from 'crypto'
+import { sendEmail } from '../utils/EmailTransporter.js'
 dotenv.config()
 
 
@@ -73,33 +76,101 @@ const loginUser= asyncHandler(async(req,res)=>{
     }
 
     const loggedInUser = await User.findById(user._id).
-    select("-password ")
+    select("-password -isOTPVerified")
 
     console.log(loggedInUser);
    
-    const token = user.generateToken();
+    const token = await user.generateToken();
     user.Token = token
-     await user.save();
+    console.log(token)
+    await user.save();
 
-    const options = {
-        httpOnly:true,
-        secure:true
-    }
+    
 
     return res.
     status(200).
     json(
         new ApiResponse(
-            200,{User:token},
+            200, {
+                user:loggedInUser,token
+            },
             "User logged in Successfully"
         )
     )
 
+});
+
+const ForgotPassword=asyncHandler(async(req,res)=>{
+    const {email} = req.body;
+
+    if(!email){
+        throw new ApiError(404,"Email Not Found");
+    }
+
+    const isExist = await User.findOne({ email });
+
+    if (!isExist) {
+        throw new ApiError(404, "User not found or email is incorrect");
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpires = Date.now() + 10 * 60 * 1000; 
+
+   
+    isExist.otp = otp;
+    isExist.otpExpires = otpExpires;
+    await isExist.save(); 
+
+    const message = `<p>Your OTP for password reset is :<b>${otp}</b>.This OTP is valid for 10 minutes.</p>`
+    await sendEmail(email,"Password reset OTP",message);
+
+    return res.status(200).json(new ApiResponse(200, "OTP sent to email")); 
+
 })
 
+
+const verifyOTP = asyncHandler(async(req,res)=>{
+
+    const {otp} =req.body;
+
+    const user = await User.findOne({otp,otpExpires:{$gt:Date.now()}})
+
+    if(!user){
+        throw new ApiError(404,"Invalid or Incorrect OTP");
+    }
+
+    user.isOTPVerified=true;
+    await user.save();
+
+    return res.status(200).json(new ApiResponse(200,"OTP Verified successfully!!"))
+    
+})
+
+const resetPassWord=asyncHandler(async(req,res)=>{
+        const{newPassword} =req.body;
+        
+        const user = await User.findOne({otpExpires:{$gt:Date.now()},isOTPVerified:true})
+
+        if(!user){
+            throw new ApiError(400,"Invalid,expired OTP , or OTP not verified")
+        }
+
+        user.password = await bcrypt.hash(newPassword,10);
+
+        user.otp = undefined;
+        user.otpExpires=undefined;
+        user.isOTPVerified=false;
+
+        await user.save();
+
+        return res.status(200).json(new ApiResponse(200,"PassWord Reset successfully !!"))
+})
 
 
 export {
     registerUser,
-    loginUser
+    loginUser,
+    ForgotPassword,
+    resetPassWord,
+    verifyOTP,
 };
