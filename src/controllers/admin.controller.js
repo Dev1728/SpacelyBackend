@@ -7,44 +7,36 @@ import { Admin } from '../models/admin.models.js';
 import { sendEmail } from '../utils/EmailTransporter.js';
 
 
-const createAdmin=asyncHandler(async(req,res)=>{
-    const {firstName,lastName,contact,password,email,activityStatus} = req.body;
+const createAdmin = async (req, res) => {
+  try {
+      const { firstName, lastName, contact, password, email, activityStatus } = req.body;
 
-    if([firstName,lastName,email,contact,password,activityStatus].some((field)=>typeof field === "string" && field.trim() === "")){
-        throw new ApiError(400,"All fields are required");
-    }
-    if(!email.includes('@')){
-        throw new ApiError(404,"Email or passWord is not Correct!!")
-    }
-    if(password.length<6){
-        throw new ApiError(400,"Please type password greater than 6 number")
-    }
+      if (!firstName || !lastName || !email || !contact || !password || !activityStatus) {
+          return res.status(400).json({ success: false, message: "All fields are required" });
+      }
 
-    const existedAdmin = await Admin.findOne({email});
-    console.log("created already ",existedAdmin);
+      if (!email.includes('@')) {
+          return res.status(400).json({ success: false, message: "Invalid email format" });
+      }
 
-    if(existedAdmin){
-        throw new ApiError(409,"User is already existed");
-    }
+      if (password.length < 6) {
+          return res.status(400).json({ success: false, message: "Password must be at least 6 characters" });
+      }
 
-    const admin = await Admin.create({
-        firstName,
-        lastName,
-        contact,
-        email,
-        password:password,
-        activityStatus,
-    })
+      const existedAdmin = await Admin.findOne({ email });
+      if (existedAdmin) {
+          return res.status(409).json({ success: false, message: "User already exists" });
+      }
 
-    const CreatedAdmin = await Admin.findById(admin._id).select("-password -isOTPVerified");
+      const admin = await Admin.create({ firstName, lastName, contact, email, password, activityStatus });
+      const createdAdmin = await Admin.findById(admin._id).select("-password -isOTPVerified");
 
-    console.log("founded",CreatedAdmin);
-    if(!CreatedAdmin){
-        throw new ApiError(500,"Something went wrong with register");
-    }
-
-    return res.status(200).json(new ApiResponse(200,CreatedAdmin,"Admin created successfully"));
-})
+      return res.status(200).json({ success: true, data: createdAdmin, message: "Admin created successfully" });
+  } catch (error) {
+      console.error(error);
+      return res.status(500).json({ success: false, message: "Internal Server Error" });
+  }
+};
 
 const login = asyncHandler(async(req,res)=>{
     const {email,password} = req.body;
