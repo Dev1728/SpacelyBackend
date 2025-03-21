@@ -28,7 +28,7 @@ const createAdmin = async (req, res) => {
           return res.status(409).json({ success: false, message: "User already exists" });
       }
 
-      const admin = await Admin.create({ firstName, lastName, contact, email, password, activityStatus });
+      const admin = await Admin.create({ firstName, lastName, contact, email, password});
       const createdAdmin = await Admin.findById(admin._id).select("-password -isOTPVerified");
 
       return res.status(200).json({ success: true, data: createdAdmin, message: "Admin created successfully" });
@@ -38,130 +38,148 @@ const createAdmin = async (req, res) => {
   }
 };
 
-const login = asyncHandler(async(req,res)=>{
-    const {email,password} = req.body;
+const login = async(req,res)=>{
 
-    if(!email || !password){
-        throw new ApiError(404,"E-mail or password is required");
+    try {
+      const {email,password} = req.body;
+  
+      if(!email || !password){
+        return res.status(400).json({ success: false, message: "Email or password are required" });
+      }
+  
+      const admin = await Admin.findOne({email});
+      console.log(admin.password,admin.email);
+      if(!admin){
+        return res.status(404).json({ success: false, message: "Admin does not exist" });
+      };
+      const isPasswordValid = await admin.isPasswordCorrect(password)
+      
+      if(!isPasswordValid){
+        return res.status(401).json({ success: false, message: "Invalid Credentails" });
+      }
+      
+      const loggedInAdmin = await Admin.findById(admin._id).
+      select("-password -isOTPVerified")
+      
+      console.log(loggedInAdmin);
+  
+      const token = await admin.generateToken();
+      console.log(token)
+  
+      return res.status(200).json({ success:true,data:{loggedInAdmin,token},message:"Admin logged in Successfully"})
+      
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+}
+
+
+
+const ForgotPassword=async(req,res)=>{
+    try {
+      const {email} = req.body;
+  
+      if(!email){
+          return res.status(404).json({success:false,message:"Email not found"});
+      }
+  
+      const isExist = await Admin.findOne({ email });
+  
+      if (!isExist) {
+        return res.status(404).json({success:false,message:"Admin not found"});
+      }
+  
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const otpExpires = Date.now() + 10 * 60 * 1000; 
+  
+     
+      isExist.otp = otp;
+      isExist.otpExpires = otpExpires;
+      await isExist.save(); 
+  
+      const message = `<p>Your OTP for password reset is :<b>${otp}</b>.This OTP is valid for 10 minutes.</p>`
+      await sendEmail(email,"Password reset OTP",message);
+  
+      return res.status(200).json({success:true ,message:"OTP sent to email"})
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 
-    const admin = await Admin.findOne({email});
-    console.log(admin.password,admin.email);
-    if(!admin){
-        throw new ApiError(404,"Admin does not exist");
-    };
-    const isPasswordValid = await admin.isPasswordCorrect(password)
+}
+
+
+const verifyOTP =async(req,res)=>{
+
+    try {
+      const {otp} =req.body;
+  
+      const admin = await Admin.findOne({otp,otpExpires:{$gt:Date.now()}})
+  
+      if(!admin){
+          return res.status(401).json({success:true,message:"Invalid or Incorrect OTP"});
+      }
+  
+      admin.isOTPVerified=true;
+      await admin.save();
+  
+      return res.status(200).json({success:true,message:"OTP Verified successfully!!"})
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
     
-    if(!isPasswordValid){
-        throw new ApiError(404,"Invalid user Credentails");
+}
+
+const resetPassWord=async(req,res)=>{
+       try {
+         const{newPassword,confirmPassword} =req.body;
+         
+         const admin = await Admin.findOne({otpExpires:{$gt:Date.now()},isOTPVerified:true})
+ 
+         if(!admin){
+             return res.status(401).json({sucess:true,message:"Invalid,expired OTP , or OTP not verified"})
+         }
+         if(!(newPassword === confirmPassword)){
+             return res.status(401).json({success:true,message:"Password does not match"});
+         }
+ 
+         admin.password = await bcrypt.hash(newPassword,10);
+ 
+         admin.otp = undefined;
+         admin.otpExpires=undefined;
+         admin.isOTPVerified=false;
+ 
+         await admin.save();
+ 
+         return res.status(200).json({success:true,message:"PassWord Reset successfully !!"})
+       } catch (error) {
+          console.error(error);
+          return res.status(500).json({ success: false, message: "Internal Server Error" });
+       }
+}
+
+
+const viewAdmin = async(req,res)=>{
+    try {
+      const {adminId}= req.params;
+  
+      if(!adminId){
+          return res.status(404).json({success:false,message:"Admin Not Found "})
+      }
+      const admins = await Admin.findById(adminId);
+  
+      if(!admins){
+          return res.status(404).json({success:false,message:"Something went wrong please try again"});
+      }
+      return res.status(200).json({success:true,data:admins,message:"All admin data"});
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ success: false, message: "Internal Server Error" });
     }
-    
-    const loggedInAdmin = await Admin.findById(admin._id).
-    select("-password -isOTPVerified")
-    
-    console.log(loggedInAdmin);
-
-    const token = await admin.generateToken();
-    console.log(token)
-
-    return res.
-    status(200).
-    json(
-        new ApiResponse(
-            200, {
-                admin:loggedInAdmin,token
-            },
-            "Admin logged in Successfully"
-        )
-    )
-})
-
-
-
-const ForgotPassword=asyncHandler(async(req,res)=>{
-    const {email} = req.body;
-
-    if(!email){
-        throw new ApiError(404,"Email Not Found");
-    }
-
-    const isExist = await Admin.findOne({ email });
-
-    if (!isExist) {
-        throw new ApiError(404, "User not found or email is incorrect");
-    }
-
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpires = Date.now() + 10 * 60 * 1000; 
-
-   
-    isExist.otp = otp;
-    isExist.otpExpires = otpExpires;
-    await isExist.save(); 
-
-    const message = `<p>Your OTP for password reset is :<b>${otp}</b>.This OTP is valid for 10 minutes.</p>`
-    await sendEmail(email,"Password reset OTP",message);
-
-    return res.status(200).json(new ApiResponse(200, "OTP sent to email")); 
-
-})
-
-
-const verifyOTP = asyncHandler(async(req,res)=>{
-
-    const {otp} =req.body;
-
-    const admin = await Admin.findOne({otp,otpExpires:{$gt:Date.now()}})
-
-    if(!admin){
-        throw new ApiError(404,"Invalid or Incorrect OTP");
-    }
-
-    admin.isOTPVerified=true;
-    await admin.save();
-
-    return res.status(200).json(new ApiResponse(200,"OTP Verified successfully!!"))
-    
-})
-
-const resetPassWord=asyncHandler(async(req,res)=>{
-        const{newPassword,confirmPassword} =req.body;
-        
-        const admin = await Admin.findOne({otpExpires:{$gt:Date.now()},isOTPVerified:true})
-
-        if(!admin){
-            throw new ApiError(400,"Invalid,expired OTP , or OTP not verified")
-        }
-        if(!(newPassword === confirmPassword)){
-            throw new ApiError(400,"Password does not match");
-        }
-
-        admin.password = await bcrypt.hash(newPassword,10);
-
-        admin.otp = undefined;
-        admin.otpExpires=undefined;
-        admin.isOTPVerified=false;
-
-        await admin.save();
-
-        return res.status(200).json(new ApiResponse(200,"PassWord Reset successfully !!"))
-})
-
-
-const viewAdmin = asyncHandler(async(req,res)=>{
-    const {adminId}= req.params;
-
-    if(!adminId){
-        throw new ApiError(400,"Admin Not Found ")
-    }
-    const admins = await Admin.findById(adminId);
-
-    if(!admins){
-        throw new ApiError(500,"Something went wrong please try again");
-    }
-    return res.status(200).json(new ApiResponse(200,admins,"All admin data"));
-})
-const getAllAdminDashboards =asyncHandler(async (req, res) => {
+}
+const getAllAdminDashboards =async (req, res) => {
     try {
       // Extract pagination and filter parameters from the query
       const { page = 1, limit = 10, role, searchQuery, searchKey } = req.query;
@@ -225,7 +243,7 @@ const getAllAdminDashboards =asyncHandler(async (req, res) => {
       const totalAdmins = await Admin.countDocuments(query);
   
       // Return the admins with pagination data
-      res.status(200).json({
+      return res.status(200).json({
         status: true,
         message: "Admins fetched successfully.",
         data: {
@@ -244,49 +262,59 @@ const getAllAdminDashboards =asyncHandler(async (req, res) => {
         error: error.message,
       });
     }
-});
+}
 
-const updateAdmin = asyncHandler(async(req,res)=>{
-        const {adminId} = req.params;
-
-        if(!adminId){
-            throw new ApiError(400,"Admin Id not Found");
+const updateAdmin =async(req,res)=>{
+        try {
+          const {adminId} = req.params;
+  
+          if(!adminId){
+              return res.status(404).json({success:false,message:"Admin Id not Found"});
+          }
+  
+          const updateData = req.body;
+  
+          if(!Object.keys(updateData).length=== 0 ){
+              return res.status(400).json({success:false,message:"At least one field is required"});
+          }
+  
+          const updateAdmin =await Admin.findByIdAndUpdate(
+              adminId,
+              {$set:updateData},
+              {new:true,runValidators:true}
+          ).select("-password")
+  
+          if(!updateAdmin){
+              return res.status(404).json({success:false,message:"Admin not Found"});
+          }
+  
+          return res.status(200).json({success:true,data:updateAdmin,message:"admin updated Successfully."})
+        } catch (error) {
+          console.error(error);
+          return res.status(500).json({ success: false, message: "Internal Server Error" });
         }
-
-        const updateData = req.body;
-
-        if(!Object.keys(updateData).length=== 0 ){
-            throw new ApiError(400,"At least one field is required");
-        }
-
-        const updateAdmin =await Admin.findByIdAndUpdate(
-            adminId,
-            {$set:updateData},
-            {new:true,runValidators:true}
-        ).select("-password")
-
-        if(!updateAdmin){
-            throw new ApiError(404,"Admin not Found");
-        }
-
-        res.status(200).json(new ApiResponse(200,updateAdmin,"admin updated Successfully."))
-})
+}
 
 
-const deleteAdmin = asyncHandler(async(req,res)=>{
-    const {adminId} = req.params;
-
-    if(!adminId){
-        throw new ApiError(400,"No such admin found");
+const deleteAdmin = async(req,res)=>{
+    try {
+      const {adminId} = req.params;
+  
+      if(!adminId){
+          return res.status(404).json({success:false,message:"Admin Not found"});
+      }
+  
+      const deletedAdmin = await Admin.findByIdAndDelete(adminId).select("-password");
+  
+      if(!deletedAdmin){
+          return res.status(500).json({success:false,message:"Something went wrong please try again"})
+      }
+  
+      return res.status(200).json({success:true ,data:deletedAdmin,message:"Admin Deleted successfully !!"})
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ success: false, message: "Internal Server Error" });
     }
-
-    const deletedAdmin = await Admin.findByIdAndDelete(adminId).select("-password");
-
-    if(!deletedAdmin){
-        throw new ApiError(500,"Something went wrong please try again")
-    }
-
-    return res.status(200).json(new ApiResponse(200,deletedAdmin,"Admin Deleted successfully !!"))
-})
+}
 
 export {createAdmin,login,viewAdmin,getAllAdminDashboards,updateAdmin,deleteAdmin,ForgotPassword,verifyOTP,resetPassWord};
