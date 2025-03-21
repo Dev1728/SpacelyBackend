@@ -118,7 +118,7 @@ const verifyOTP =async(req,res)=>{
       const admin = await Admin.findOne({otp,otpExpires:{$gt:Date.now()}})
   
       if(!admin){
-          return res.status(401).json({success:true,message:"Invalid or Incorrect OTP"});
+          return res.status(401).json({success:false,message:"Invalid or Incorrect OTP"});
       }
   
       admin.isOTPVerified=true;
@@ -139,10 +139,10 @@ const resetPassWord=async(req,res)=>{
          const admin = await Admin.findOne({otpExpires:{$gt:Date.now()},isOTPVerified:true})
  
          if(!admin){
-             return res.status(401).json({sucess:true,message:"Invalid,expired OTP , or OTP not verified"})
+             return res.status(401).json({sucess:false,message:"Invalid,expired OTP , or OTP not verified"})
          }
          if(!(newPassword === confirmPassword)){
-             return res.status(401).json({success:true,message:"Password does not match"});
+             return res.status(401).json({success:false,message:"Password does not match"});
          }
  
          admin.password = await bcrypt.hash(newPassword,10);
