@@ -42,6 +42,9 @@ const adminSchema = new mongoose.Schema(
         isOTPVerified:{
             type:Boolean,
             default:false,
+        },
+        verifiedId:{
+            type:String
         }
         
     },
@@ -68,6 +71,11 @@ adminSchema.methods.isPasswordCorrect = async function (password) {
     if (!password) {
         throw new Error("Password not found for this admin");
     }
-    return await bcrypt.compare(password,this.password)
+    console.log(this.password);
+    console.log(password);
+    // return await bcrypt.compare(password,this.password)
+    const check= await bcrypt.compare(password,this.password);
+    console.log(check);
+    return check;
 }
 export const Admin = mongoose.model("Admin",adminSchema);

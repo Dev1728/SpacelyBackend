@@ -48,6 +48,7 @@ const login = async(req,res)=>{
       }
   
       const admin = await Admin.findOne({email});
+      console.log(password);
       console.log(admin.password,admin.email);
       if(!admin){
         return res.status(404).json({ success: false, message: "Admin does not exist" });
@@ -120,11 +121,13 @@ const verifyOTP =async(req,res)=>{
       if(!admin){
           return res.status(401).json({success:false,message:"Invalid or Incorrect OTP"});
       }
-  
+      const verifiedId = Math.floor(10000000 + Math.random() * 90000000).toString();
+
       admin.isOTPVerified=true;
+      admin.verifiedId=verifiedId;
       await admin.save();
   
-      return res.status(200).json({success:true,message:"OTP Verified successfully!!"})
+      return res.status(200).json({success:true,data:verifiedId,message:"OTP Verified successfully!!"})
     } catch (error) {
       console.error(error);
       return res.status(500).json({ success: false, message: "Internal Server Error" });
@@ -134,10 +137,10 @@ const verifyOTP =async(req,res)=>{
 
 const resetPassWord=async(req,res)=>{
        try {
-         const{newPassword,confirmPassword} =req.body;
+         const{newPassword,confirmPassword,email,verifiedId} =req.body;
          
-         const admin = await Admin.findOne({otpExpires:{$gt:Date.now()},isOTPVerified:true})
- 
+         const admin = await Admin.findOne({otpExpires:{$gt:Date.now()},isOTPVerified:true,email,verifiedId})
+          
          if(!admin){
              return res.status(401).json({sucess:false,message:"Invalid,expired OTP , or OTP not verified"})
          }
@@ -145,13 +148,23 @@ const resetPassWord=async(req,res)=>{
              return res.status(401).json({success:false,message:"Password does not match"});
          }
  
-         admin.password = await bcrypt.hash(newPassword,10);
+         const password = await bcrypt.hash(newPassword,10);
+        //  console.log(admin.password);
+        await Admin.findOneAndUpdate(
+          { email },
+          {
+              password:password,
+              $unset: { otp: 1, otpExpires: 1 ,verifiedId:1},
+              isOTPVerified: false
+              
+          },
+          { new: true } // Return updated document
+      ).select("-otp");
+        //  admin.otp = undefined;
+        //  admin.otpExpires=undefined;
+        //  admin.isOTPVerified=false;
  
-         admin.otp = undefined;
-         admin.otpExpires=undefined;
-         admin.isOTPVerified=false;
- 
-         await admin.save();
+        //  await admin.save();
  
          return res.status(200).json({success:true,message:"PassWord Reset successfully !!"})
        } catch (error) {

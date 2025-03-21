@@ -55,9 +55,10 @@ const bookingManagementSchema = new mongoose.Schema(
             required: true
         },
         bookingStatus: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "BookingStatus", // Reference to BookingStatus schema
-            required: true
+            type:String,
+            enum:["pending","confirmed","completed","cancelled"],
+            required: true,
+            default:"pending"
         },
         paymentStatus: {
             type: String,

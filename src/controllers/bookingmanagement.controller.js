@@ -4,7 +4,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { BookingManagement } from "../models/bookingManagement.models.js";
 
 
-const getAllBookingManagement =asyncHandler(async (req, res) => {
+const getAllBookingManagement =async (req, res) => {
     try {
       // Extract pagination and filter parameters from the query
       const { page = 1, limit = 10, bookingStatus,paymentStatus, bookingType,cancellationStatus ,searchKey,searchQuery } = req.query;
@@ -81,7 +81,7 @@ const getAllBookingManagement =asyncHandler(async (req, res) => {
       const totalBookings = await BookingManagement.countDocuments(query);
   
       // Return the admins with pagination data
-      res.status(200).json({
+      return res.status(200).json({
         status: true,
         message: "Bookings fetched successfully.",
         data: {
@@ -100,26 +100,27 @@ const getAllBookingManagement =asyncHandler(async (req, res) => {
         error: error.message,
       });
     }
-});
+}
 
 const bookingStatus= asyncHandler(async(req,res)=>{
     const {status} = req.body;
     const {bookingId} = req.params;
 
-    if(!status){
-        throw new ApiError(400,"status is required");
+    if(!status || !["pending","confirmed","completed","cancelled"].includes(status)){
+        return res.status(404).json({success:false,message:"status is required"});
     }
+
 
     const booking= await BookingManagement.findOne({bookingId});
     if(!booking){
-        throw new ApiError(404,"Booking Not found")
+        return res.status(404).json({sucess:false,message:"Booking Not found"})
     }
     
     booking.bookingStatus =status;
     await booking.save();
     
 
-    return res.status(200).json(new ApiResponse(200,booking,"Booking status updated successfully "))
+    return res.status(200).json({success:true,data:booking,message:"Booking status updated successfully "})
 })
 
 export{getAllBookingManagement,bookingStatus};
