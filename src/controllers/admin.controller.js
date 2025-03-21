@@ -200,11 +200,8 @@ const getAllAdminDashboards =asyncHandler(async (req, res) => {
             case 'email':
               query.email = searchRegex;
               break;
-            case 'mobile':
-              query.mobile = searchRegex;
-              break;
-            case 'department':
-              query.department = searchRegex;
+            case 'contact':
+              query.contact = searchRegex;
               break;
             default:
               // If searchKey is not recognized, fall back to searching all fields
@@ -212,8 +209,7 @@ const getAllAdminDashboards =asyncHandler(async (req, res) => {
                 { firstName: searchRegex },
                 { lastName: searchRegex },
                 { email: searchRegex },
-                { mobile: searchRegex },
-                { department: searchRegex },
+                { contact: searchRegex }
               ];
           }
         } else {
@@ -222,8 +218,7 @@ const getAllAdminDashboards =asyncHandler(async (req, res) => {
             { firstName: searchRegex },
             { lastName: searchRegex },
             { email: searchRegex },
-            { mobile: searchRegex },
-            { department: searchRegex },
+            { contact: searchRegex }
           ];
         }
       }
