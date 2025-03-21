@@ -5,4 +5,4 @@ const router = Router();
 
 router.route("/bookings").get(getAllBookingManagement);
 
-export {router}
+export default router

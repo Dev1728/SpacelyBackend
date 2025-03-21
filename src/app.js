@@ -19,7 +19,7 @@ import bookingRouter from  './routes/bookingmanagement.route.js'
 
 //routes declaration
 // app.use("/api/v1/users",userRouter);
-app.use('/api/v1/booking',bookingRouter);
+app.use("/api/v1/booking",bookingRouter);
 app.use("/api/v1/admin",adminRouter);
 
 

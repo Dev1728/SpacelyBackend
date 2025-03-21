@@ -102,4 +102,21 @@ const getAllBookingManagement =asyncHandler(async (req, res) => {
     }
 });
 
+const bookingStatus= asyncHandler(async(req,res)=>{
+    const {status} = req.body;
+    const {bookingId} = req.params;
+
+    if(!status){
+        throw new ApiError(400,"status is required");
+    }
+
+
+    const booking= await BookingManagement.findById(bookingId);
+    if(!booking){
+        throw new ApiError(404,"Booking Not found")
+    }
+    
+    booking.bookingStatus
+})
+
 export{getAllBookingManagement};
