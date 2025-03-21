@@ -13,12 +13,13 @@ app.use(express.urlencoded({extended:true}));
 app.use(express.static("public")); 
 
 //routes imports
-import userRouter from './routes/user.route.js'
+// import userRouter from './routes/user.route.js'
 import adminRouter from './routes/admin.route.js'
-
+import bookingRouter from  './routes/bookingmanagement.route.js' 
 
 //routes declaration
-app.use("/api/v1/users",userRouter);
+// app.use("/api/v1/users",userRouter);
+app.use('/api/v1/booking',bookingRouter);
 app.use("/api/v1/admin",adminRouter);
 
 

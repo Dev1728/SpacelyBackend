@@ -6,11 +6,13 @@ import { ApiError } from '../utils/ApiError.js'
 
 const adminSchema = new mongoose.Schema(
     {
-        fullName:{
+        firstName:{
             type:String,
             required:true,
-            lowercase:true,
-            unique:true
+        },
+        lastName:{
+            type:String,
+            required:true,
         },
         password:{
             type:String,
@@ -26,37 +28,21 @@ const adminSchema = new mongoose.Schema(
             required:true,
             unique:true
         },
-        roles:{
-            type:String,
-            required:true
-        },
-        department:{
-            type:String,
-            required:true
-        },
         activityStatus:{
             type:String,
             enum:["Active","Inactive"],
             default:"Active"
         },
-        lastLogin:{
-            type:Date,
-            dafault:Date.now
+        otp: { 
+            type:Number 
+        }, 
+        otpExpires: { 
+            type: Date 
         },
-        permissions:{
-            read:{
-                type:Boolean,
-                default:false
-            },
-            write:{
-                type:Boolean,
-                default:false
-            },
-            execute:{
-                type:Boolean,
-                default:false
-            }
-        },
+        isOTPVerified:{
+            type:Boolean,
+            default:false,
+        }
         
     },
     {timestamps:true}
