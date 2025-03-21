@@ -9,9 +9,9 @@ import { sendEmail } from '../utils/EmailTransporter.js';
 
 const createAdmin = async (req, res) => {
   try {
-      const { firstName, lastName, contact, password, email, activityStatus } = req.body;
+      const { firstName, lastName, contact, password, email} = req.body;
 
-      if (!firstName || !lastName || !email || !contact || !password || !activityStatus) {
+      if (!firstName || !lastName || !email || !contact || !password) {
           return res.status(400).json({ success: false, message: "All fields are required" });
       }
 
