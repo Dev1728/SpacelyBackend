@@ -24,7 +24,7 @@ const createAdmin=asyncHandler(async(req,res)=>{
     console.log("created already ",existedAdmin);
 
     if(existedAdmin){
-        throw new ApiError(404,"User is already existed");
+        throw new ApiError(409,"User is already existed");
     }
 
     const admin = await Admin.create({

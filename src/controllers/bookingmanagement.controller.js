@@ -110,13 +110,16 @@ const bookingStatus= asyncHandler(async(req,res)=>{
         throw new ApiError(400,"status is required");
     }
 
-
-    const booking= await BookingManagement.findById(bookingId);
+    const booking= await BookingManagement.findOne({bookingId});
     if(!booking){
         throw new ApiError(404,"Booking Not found")
     }
     
-    booking.bookingStatus
+    booking.bookingStatus =status;
+    await booking.save();
+    
+
+    return res.status(200).json(new ApiResponse(200,booking,"Booking status updated successfully "))
 })
 
-export{getAllBookingManagement};
+export{getAllBookingManagement,bookingStatus};
