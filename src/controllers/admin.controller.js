@@ -10,7 +10,7 @@ import { sendEmail } from '../utils/EmailTransporter.js';
 const createAdmin=asyncHandler(async(req,res)=>{
     const {firstName,lastName,contact,password,email,activityStatus} = req.body;
 
-    if([firstName,lastName,email,contact,password,activityStatus].some((field)=>field?.trim() === "")){
+    if([firstName,lastName,email,contact,password,activityStatus].some((field)=>typeof field === "string" && field.trim() === "")){
         throw new ApiError(400,"All fields are required");
     }
     if(!email.includes('@')){
