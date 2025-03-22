@@ -9,9 +9,9 @@ import { sendEmail } from '../utils/EmailTransporter.js';
 
 const createAdmin = async (req, res) => {
   try {
-      const { firstName, lastName, contact, password, email} = req.body;
+      const { firstName, lastName, contact, password,confirmPassword, email} = req.body;
 
-      if (!firstName || !lastName || !email || !contact || !password) {
+      if (!firstName || !lastName || !email || !contact || !password || !confirmPassword) {
           return res.status(400).json({ success: false, message: "All fields are required" });
       }
 
@@ -23,6 +23,9 @@ const createAdmin = async (req, res) => {
           return res.status(400).json({ success: false, message: "Password must be at least 6 characters" });
       }
 
+      if(password !== confirmPassword){
+        return res.status(401).json({success:false,message:"password do not match with confirm Password"})
+      }
       const existedAdmin = await Admin.findOne({ email });
       if (existedAdmin) {
           return res.status(409).json({ success: false, message: "User already exists" });
@@ -127,7 +130,7 @@ const verifyOTP =async(req,res)=>{
       admin.verifiedId=verifiedId;
       await admin.save();
   
-      return res.status(200).json({success:true,data:verifiedId,message:"OTP Verified successfully!!"})
+      return res.status(200).json({success:true,verifiedId:verifiedId,message:"OTP Verified successfully!!"})
     } catch (error) {
       console.error(error);
       return res.status(500).json({ success: false, message: "Internal Server Error" });
