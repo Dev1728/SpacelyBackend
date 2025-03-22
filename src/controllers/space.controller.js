@@ -93,7 +93,7 @@ const createSpace = async(req,res)=>{
         }
 
         const isexistedSpace = await SpaceManagementSchema.findOne({
-            $or:[{venueName},{venueAddress},{venueCapacity}]
+            $and:[{venueName},{venueAddress},{venueCapacity}]
         })
 
         if(isexistedSpace){
