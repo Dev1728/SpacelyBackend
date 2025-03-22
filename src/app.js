@@ -16,9 +16,9 @@ app.use(express.static("public"));
 // import userRouter from './routes/user.route.js'
 import adminRouter from './routes/admin.route.js'
 import bookingRouter from  './routes/bookingmanagement.route.js' 
-
+import spaceRouter from './routes/space.route.js'
 //routes declaration
-// app.use("/api/v1/users",userRouter);
+app.use("/api/v1/space",spaceRouter);
 app.use("/api/v1/booking",bookingRouter);
 app.use("/api/v1/admin",adminRouter);
 

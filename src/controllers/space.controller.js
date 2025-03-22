@@ -8,7 +8,7 @@ import { SpaceManagementSchema } from "../models/space.models.js";
 const getAllSpaceManagement =async (req, res) => {
     try {
       // Extract pagination and filter parameters from the query
-      const { page = 1, limit = 10, activityStatus,availabilityStatus,searchKey,searchQuery } = req.query;
+      const { page = 1, limit = 10, activityStatus,availability,searchKey,searchQuery } = req.query;
   
       // Convert page and limit to integers
       const pageNumber = parseInt(page);
@@ -20,8 +20,8 @@ const getAllSpaceManagement =async (req, res) => {
         query.activityStatus = activityStatus; // Filter by activityStatus if provided
       }
 
-      if (availabilityStatus) {
-        query.availabilityStatus = availabilityStatus; // Filter by availabilityStatus if provided
+      if (availability) {
+        query.availability = availability; // Filter by availabilityStatus if provided
       }
      
   
@@ -54,8 +54,7 @@ const getAllSpaceManagement =async (req, res) => {
         }
       }
       // Find admins based on the filters
-      const space = await SpaceManagementSchema.find(query).
-        populate('venueName')
+      const space = await SpaceManagementSchema.find(query)
         .sort({ createdAt: -1 })
         .skip((pageNumber - 1) * pageSize) // Skip records based on page number
         .limit(pageSize); // Limit the number of records per page
@@ -68,10 +67,10 @@ const getAllSpaceManagement =async (req, res) => {
         status: true,
         message: "SpaceData fetched successfully.",
         data: {
-          bookings,
+          space,
           totalspace,
           currentPage: pageNumber,
-          totalPages: Math.ceil(totalBookings / pageSize),
+          totalPages: Math.ceil(totalspace / pageSize),
           pageSize: pageSize,
         },
       });
@@ -87,16 +86,116 @@ const getAllSpaceManagement =async (req, res) => {
 
 const createSpace = async(req,res)=>{
     try {
-        const{venueName,venueAddress,venueCapacity,price,availibility,openingTime,closingTime}= req.body;
+        const{venueName,venueAddress,venueCapacity,price,availability,openingTime,closingTime}= req.body;
 
-        if(!venueName || !venueAddress || !venueCapacity || !price || !availibility || !openingTime || !closingTime){
+        if(!venueName || !venueAddress || !venueCapacity || !price || !availability || !openingTime || !closingTime){
             return res.status(404).json({success:false,message:"All fields are required"});
         }
-        
+
+        const isexistedSpace = await SpaceManagementSchema.findOne({
+            $or:[{venueName},{venueAddress},{venueCapacity}]
+        })
+
+        if(isexistedSpace){
+            return res.status(409).json({success:false,message:"space is Already existed"});
+        }
+
+        const space = await SpaceManagementSchema.create({
+            venueName,
+            venueAddress,
+            venueCapacity,
+            price,
+            availability,
+            openingTime,
+            closingTime
+        })
+
+        if(!space){
+            return res.status(401).json({success:false,message:"Something went with create space"})
+        }
+
+        const createdSpace = await SpaceManagementSchema.findById(space._id);
+
+        return res.status(200).json({success:true,space:createdSpace,message:"space created Successfully !!"});
     } catch (error) {
-        
+        console.error(error);
+        return res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 }
 
 
-export{getAllSpaceManagement};
+const viewSpace  = async(req,res)=>{
+    try {
+        const{spaceId} = req.params;
+
+        if(!spaceId){
+            return res.status(404).json({success:false,message:"Space Id not Found"});
+        }
+
+        const space = await SpaceManagementSchema.findById(spaceId);
+
+        if(!space){
+            return res.status(404).json({success:false,message:"Space Not Found"})
+        }
+
+        return res.status(200).json({success:true,space:space,message:"space retrieve successfully"})
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+}
+
+const updateSpace =async(req,res)=>{
+        try {
+          const {spaceId} = req.params;
+  
+          if(!spaceId){
+              return res.status(404).json({success:false,message:"Space Id not Found"});
+          }
+  
+          const updateData = req.body;
+  
+          if(!Object.keys(updateData).length=== 0 ){
+              return res.status(400).json({success:false,message:"At least one field is required"});
+          }
+  
+          const updateSpace =await SpaceManagementSchema.findByIdAndUpdate(
+              spaceId,
+              {$set:updateData},
+              {new:true,runValidators:true}
+          )
+  
+          if(!updateSpace){
+              return res.status(404).json({success:false,message:"Space not Found"});
+          }
+  
+          return res.status(200).json({success:true,data:updateSpace,message:"space updated Successfully."})
+        } catch (error) {
+          console.error(error);
+          return res.status(500).json({ success: false, message: "Internal Server Error" });
+        }
+}
+
+
+
+const deleteSpace = async(req,res)=>{
+    try {
+      const {spaceId} = req.params;
+  
+      if(!spaceId){
+          return res.status(404).json({success:false,message:"Space Not found"});
+      }
+  
+      const deletedSpace = await SpaceManagementSchema.findByIdAndDelete(spaceId)
+  
+      if(!deletedSpace){
+          return res.status(500).json({success:false,message:"Something went wrong please try again"})
+      }
+  
+      return res.status(200).json({success:true ,data:deletedSpace,message:"Space Deleted successfully !!"})
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+}
+export{getAllSpaceManagement,createSpace,viewSpace,updateSpace,deleteSpace};
