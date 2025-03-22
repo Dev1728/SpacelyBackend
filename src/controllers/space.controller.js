@@ -86,9 +86,9 @@ const getAllSpaceManagement =async (req, res) => {
 
 const createSpace = async(req,res)=>{
     try {
-        const{venueName,venueAddress,venueCapacity,price,availability,openingTime,closingTime}= req.body;
+        const{venueName,venueAddress,venueCapacity,price,openingTime,closingTime}= req.body;
 
-        if(!venueName || !venueAddress || !venueCapacity || !price || !availability || !openingTime || !closingTime){
+        if(!venueName || !venueAddress || !venueCapacity || !price || !openingTime || !closingTime){
             return res.status(404).json({success:false,message:"All fields are required"});
         }
 
@@ -105,7 +105,6 @@ const createSpace = async(req,res)=>{
             venueAddress,
             venueCapacity,
             price,
-            availability,
             openingTime,
             closingTime
         })
