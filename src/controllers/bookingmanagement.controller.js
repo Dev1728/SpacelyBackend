@@ -96,7 +96,7 @@ const getAllBookingManagement =async (req, res) => {
       console.error(error);
       res.status(500).json({
         status: false,
-        message: "Error fetching admins.",
+        message: "Error fetching bookings.",
         error: error.message,
       });
     }
