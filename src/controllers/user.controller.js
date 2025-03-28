@@ -7,7 +7,7 @@ const getAllDataOfUserManagemenet = async (req,res) =>{
        
          try {
               // Extract pagination and filter parameters from the query
-              const { page = 1, limit = 10, acountStatus, searchQuery, searchKey } = req.query;
+              const { page = 1, limit = 10, accountStatus, searchQuery, searchKey } = req.query;
           
               // Convert page and limit to integers
               const pageNumber = parseInt(page);
@@ -15,8 +15,8 @@ const getAllDataOfUserManagemenet = async (req,res) =>{
           
               // Prepare query filters
               let query = {};
-              if (acountStatus) {
-                query.acountStatus = acountStatus; // Filter by role if provided
+              if (accountStatus) {
+                query.accountStatus = accountStatus; // Filter by role if provided
               }
           
               if (searchQuery) {

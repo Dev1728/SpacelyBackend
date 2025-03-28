@@ -13,7 +13,7 @@ app.use(express.urlencoded({extended:true}));
 app.use(express.static("public")); 
 
 //routes imports
-// import userRouter from './routes/user.route.js'
+import userRouter from './routes/user.route.js'
 import adminRouter from './routes/admin.route.js'
 import bookingRouter from  './routes/bookingmanagement.route.js' 
 import spaceRouter from './routes/space.route.js'
@@ -27,6 +27,7 @@ app.use("/api/v1/admin",adminRouter);
 app.use("/api/v1/category",categoryRouter);
 app.use("/api/v1/subcategory",subCategoryRouter);
 app.use("/api/v1/upload",upload)
+app.use("/api/v1/user",userRouter);
 
 
 export {app};  
