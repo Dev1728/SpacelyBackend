@@ -1,15 +1,14 @@
 import express from 'express';
 import multer from 'multer';
-import { uploadFileMiddleware } from '../controllers/uploadFile.controller.js'  // Import the middleware
+import {uploadFileMiddleware} from '../middlewear/uploadFile.middlerwear.js'  // Import the middleware
+import { uploadMultiple, uploadSingle } from '../middlewear/multer.middlewear.js';
 
 const router = express.Router();
 
-// Set up multer to handle file uploads
-const storage = multer.memoryStorage();  // Store files in memory
-const upload = multer({ storage: storage });
+
 
 // Route for single file upload
-router.post('/upload-single', upload.single('file'), async (req, res) => {
+router.route('/upload-single').post(uploadSingle, async (req, res) => {
   try {
     const urls = await uploadFileMiddleware(req.file, 'single');
     res.status(200).json({
@@ -27,7 +26,7 @@ router.post('/upload-single', upload.single('file'), async (req, res) => {
 });
 
 // Route for multiple files upload
-router.post('/upload-multiple', upload.array('files', 12), async (req, res) => {
+router.route('/upload-multiple').post(uploadMultiple, async (req, res) => {
   try {
     const urls = await uploadFileMiddleware(req.files, 'multiple');
     res.status(200).json({

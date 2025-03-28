@@ -1,6 +1,4 @@
-import { ApiError } from "../utils/ApiError.js";
-import { ApiResponse } from "../utils/ApiResponse.js";
-import { asyncHandler } from "../utils/asyncHandler.js";
+
 import { BookingManagement } from "../models/bookingManagement.models.js";
 import mongoose from 'mongoose';
 
@@ -100,34 +98,39 @@ const getAllBookingManagement =async (req, res) => {
     }
 }
 
-const bookingStatus = asyncHandler(async (req, res) => {
-  const { bookingStatus } = req.body;
-  const { bookingId } = req.params;
-
-  // Validate status input
-  if (!bookingStatus || !["pending", "confirmed", "completed", "cancelled"].includes(bookingStatus)) {
-      return res.status(400).json({ success: false, message: "Invalid status" });
-  }
-
-  console.log("Received bookingId:", bookingId);
+const bookingStatus = async (req, res) => {
+  try {
+    const { bookingStatus } = req.body;
+    const { bookingId } = req.params;
   
-  // Validate MongoDB ObjectId
-  if (!mongoose.Types.ObjectId.isValid(bookingId)) {
-    return res.status(400).json({ success: false, message: "Invalid booking ID format" });
+    // Validate status input
+    if (!bookingStatus || !["pending", "confirmed", "completed", "cancelled"].includes(bookingStatus)) {
+        return res.status(400).json({ success: false, message: "Invalid status" });
+    }
+  
+    console.log("Received bookingId:", bookingId);
+    
+    // Validate MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(bookingId)) {
+      return res.status(400).json({ success: false, message: "Invalid booking ID format" });
+    }
+  
+    // Find and update booking
+    const booking = await BookingManagement.findByIdAndUpdate(
+      bookingId,
+      { $set: { bookingStatus } },  
+      { new: true, runValidators: true }
+    );
+  
+    if (!booking) {
+        return res.status(404).json({ success: false, message: "Booking not found" });
+    }
+  
+    return res.status(200).json({ success: true, data: booking, message: "Booking status updated successfully" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ success: false, message: "Internal Server Error" });
   }
-
-  // Find and update booking
-  const booking = await BookingManagement.findByIdAndUpdate(
-    bookingId,
-    { $set: { bookingStatus } },  
-    { new: true, runValidators: true }
-  );
-
-  if (!booking) {
-      return res.status(404).json({ success: false, message: "Booking not found" });
-  }
-
-  return res.status(200).json({ success: true, data: booking, message: "Booking status updated successfully" });
-});
+};
 
 export{getAllBookingManagement,bookingStatus};

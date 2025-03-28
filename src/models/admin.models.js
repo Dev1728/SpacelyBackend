@@ -1,7 +1,7 @@
 import mongoose, { deleteModel } from 'mongoose'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-import { ApiError } from '../utils/ApiError.js'
+
 
 
 const adminSchema = new mongoose.Schema(
@@ -69,7 +69,7 @@ adminSchema.methods.generateToken =async function () {
 
 adminSchema.methods.isPasswordCorrect = async function (password) {
     if (!password) {
-        throw new Error("Password not found for this admin");
+        throw error;
     }
     console.log(this.password);
     console.log(password);
