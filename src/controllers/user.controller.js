@@ -1,5 +1,5 @@
 
-
+import {User} from '../models/user.models.js'
 
 
 // // I have created register for simplicity
@@ -58,23 +58,23 @@ const getAllDataOfUserManagemenet = async (req,res) =>{
                 }
               }
               // Find admins based on the filters
-              const admins = await Admin.find(query)
+              const users = await User.find(query)
                 .sort({ createdAt: -1 })
                 .skip((pageNumber - 1) * pageSize) // Skip records based on page number
                 .limit(pageSize); // Limit the number of records per page
           
               // Get total count of admins for pagination
-              const totalAdmins = await Admin.countDocuments(query);
+              const totalUsers = await User.countDocuments(query);
           
               // Return the admins with pagination data
               return res.status(200).json({
                 status: true,
-                message: "Admins fetched successfully.",
+                message: "Users Management fetched successfully.",
                 data: {
-                  admins,
-                  totalAdmins,
+                  users,
+                  totalUsers,
                   currentPage: pageNumber,
-                  totalPages: Math.ceil(totalAdmins / pageSize),
+                  totalPages: Math.ceil(totalUsers / pageSize),
                   pageSize: pageSize,
                 },
               });
