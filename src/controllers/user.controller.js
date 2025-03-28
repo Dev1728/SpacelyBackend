@@ -60,8 +60,8 @@ const getAllDataOfUserManagemenet = async (req,res) =>{
               // Find user based on the filters
               const users = await User.find(query)
                 .sort({ createdAt: -1 })
-                .skip((pageNumber - 1) * pageSize) // Skip records based on page number
-                .limit(pageSize); // Limit the number of records per page
+                .skip((pageNumber - 1) * pageSize) 
+                .limit(pageSize); 
           
               
               const totalUsers = await User.countDocuments(query);
