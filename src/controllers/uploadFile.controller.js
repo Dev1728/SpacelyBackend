@@ -1,4 +1,4 @@
-import { storage } from '../../firebase.js'; // import Firebase storage
+import { storage } from '../../firebase.js'; 
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 
 export const uploadFileMiddleware = async (files, quantity) => {
