@@ -16,7 +16,7 @@ const getAllDataOfUserManagemenet = async (req,res) =>{
               // Prepare query filters
               let query = {};
               if (accountStatus) {
-                query.accountStatus = accountStatus; // Filter by role if provided
+                query.accountStatus = accountStatus; // Filter by accountStatus if provided
               }
           
               if (searchQuery) {
@@ -57,16 +57,16 @@ const getAllDataOfUserManagemenet = async (req,res) =>{
                   ];
                 }
               }
-              // Find admins based on the filters
+              // Find user based on the filters
               const users = await User.find(query)
                 .sort({ createdAt: -1 })
                 .skip((pageNumber - 1) * pageSize) // Skip records based on page number
                 .limit(pageSize); // Limit the number of records per page
           
-              // Get total count of admins for pagination
+              /
               const totalUsers = await User.countDocuments(query);
           
-              // Return the admins with pagination data
+              // Return the user with pagination data
               return res.status(200).json({
                 status: true,
                 message: "Users Management fetched successfully.",
