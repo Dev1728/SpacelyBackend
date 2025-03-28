@@ -63,7 +63,7 @@ const getAllDataOfUserManagemenet = async (req,res) =>{
                 .skip((pageNumber - 1) * pageSize) // Skip records based on page number
                 .limit(pageSize); // Limit the number of records per page
           
-              /
+              
               const totalUsers = await User.countDocuments(query);
           
               // Return the user with pagination data
