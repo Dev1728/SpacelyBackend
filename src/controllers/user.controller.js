@@ -1,176 +1,95 @@
-// import {asyncHandler} from  '../utils/asyncHandler.js'
-// import {ApiError} from '../utils/ApiError.js'
-// import {User} from '../models/user.models.js'
-// import { ApiResponse } from '../utils/ApiResponse.js'
-// import nodemailer from 'nodemailer'
-// import jwt from 'jsonwebtoken'
-// import dotenv from 'dotenv'
-// import bcrypt from'bcrypt'
-// import crypto from 'crypto'
-// import { sendEmail } from '../utils/EmailTransporter.js'
-// dotenv.config()
+
 
 
 
 // // I have created register for simplicity
-// const registerUser = asyncHandler(async (req,res) =>{
+const getAllDataOfUserManagemenet = async (req,res) =>{
        
-//         const {email,username,password} =req.body
-//        // console.log("email",email);
-
-//         if([email,username,password].some((field)=>field?.trim() === "")){
-//             throw new ApiError(400,"All fields are required");
-//         }
-//         if(!email.includes('@')){
-//             throw new ApiError(400,"Email is not correct");
-//         }
-
-//         const existedUser = await User.findOne({
-//             $or:[{username},{email}]
-//         })
-
-//         if(existedUser){
-//             throw new ApiError(409,"User with email or username Already exists");
-//         }
-        
-       
-
-//        const user =  await User.create({
-//             email,
-//             password,
-//             username:username.toLowerCase(),
-//         })
-
-    
-
-//        const createdUser = await User.findById(user._id).select(
-//             "-password "
-//        );
-
-//        if(!createdUser){
-//             throw new ApiError(500,"Something went wrong while registering the user")
-//        }
-
-//        return res.status(201).json( new ApiResponse(200,createdUser,"User registed successfully"))
-     
-// })
-
-// const loginUser= asyncHandler(async(req,res)=>{
-    
-
-//     const {email,password} =req.body;
-//     //console.log(email);
-
-//     if(!email ){
-//         throw new ApiError(400,"username or email is required"); 
-//     }
-
-//     const user =await User.findOne({email})
-//     if(!user){
-//         throw new ApiError(404,"user does not Exist");
-//     }
-//     const isPasswordValid = await user.isPasswordCorrect(password)
-
-//     if(!isPasswordValid){
-//         throw new ApiError(404,"Invalid user Credentails");
-//     }
-
-//     const loggedInUser = await User.findById(user._id).
-//     select("-password -isOTPVerified")
-
-//     console.log(loggedInUser);
-   
-//     const token = await user.generateToken();
-//     user.Token = token
-//     console.log(token)
-//     await user.save();
-
-    
-
-//     return res.
-//     status(200).
-//     json(
-//         new ApiResponse(
-//             200, {
-//                 user:loggedInUser,token
-//             },
-//             "User logged in Successfully"
-//         )
-//     )
-
-// });
-
-// const ForgotPassword=asyncHandler(async(req,res)=>{
-//     const {email} = req.body;
-
-//     if(!email){
-//         throw new ApiError(404,"Email Not Found");
-//     }
-
-//     const isExist = await User.findOne({ email });
-
-//     if (!isExist) {
-//         throw new ApiError(404, "User not found or email is incorrect");
-//     }
-
-//     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-//     const otpExpires = Date.now() + 10 * 60 * 1000; 
-
-   
-//     isExist.otp = otp;
-//     isExist.otpExpires = otpExpires;
-//     await isExist.save(); 
-
-//     const message = `<p>Your OTP for password reset is :<b>${otp}</b>.This OTP is valid for 10 minutes.</p>`
-//     await sendEmail(email,"Password reset OTP",message);
-
-//     return res.status(200).json(new ApiResponse(200, "OTP sent to email")); 
-
-// })
+         try {
+              // Extract pagination and filter parameters from the query
+              const { page = 1, limit = 10, acountStatus, searchQuery, searchKey } = req.query;
+          
+              // Convert page and limit to integers
+              const pageNumber = parseInt(page);
+              const pageSize = parseInt(limit);
+          
+              // Prepare query filters
+              let query = {};
+              if (acountStatus) {
+                query.acountStatus = acountStatus; // Filter by role if provided
+              }
+          
+              if (searchQuery) {
+                // Create a case-insensitive regular expression for the search
+                const searchRegex = new RegExp(searchQuery, 'i');
+          
+                // If searchKey is provided, search only in that specific field
+                if (searchKey) {
+                  switch (searchKey.toLowerCase()) {
+                    case 'firstname':
+                      query.firstName = searchRegex;
+                      break;
+                    case 'lastname':
+                      query.lastName = searchRegex;
+                      break;
+                    case 'email':
+                      query["userContact.email"] = searchRegex;
+                      break;
+                    case 'contact':
+                      query["userContact.contact"]= searchRegex;
+                      break;
+                    default:
+                      // If searchKey is not recognized, fall back to searching all fields
+                      query.$or = [
+                        { firstName: searchRegex },
+                        { lastName: searchRegex },
+                        { 'userContact.email': searchRegex },
+                        { 'userContact.contact': searchRegex }
+                      ];
+                  }
+                } else {
+                  // If no searchKey is provided, search in all fields as before
+                  query.$or = [
+                    { firstName: searchRegex },
+                    { lastName: searchRegex },
+                    { 'userContact.email': searchRegex },
+                    { 'userContact.contact': searchRegex },
+                  ];
+                }
+              }
+              // Find admins based on the filters
+              const admins = await Admin.find(query)
+                .sort({ createdAt: -1 })
+                .skip((pageNumber - 1) * pageSize) // Skip records based on page number
+                .limit(pageSize); // Limit the number of records per page
+          
+              // Get total count of admins for pagination
+              const totalAdmins = await Admin.countDocuments(query);
+          
+              // Return the admins with pagination data
+              return res.status(200).json({
+                status: true,
+                message: "Admins fetched successfully.",
+                data: {
+                  admins,
+                  totalAdmins,
+                  currentPage: pageNumber,
+                  totalPages: Math.ceil(totalAdmins / pageSize),
+                  pageSize: pageSize,
+                },
+              });
+            } catch (error) {
+              console.error(error);
+              res.status(500).json({
+                status: false,
+                message: "Error fetching admins.",
+                error: error.message,
+              });
+            }
+}
 
 
-// const verifyOTP = asyncHandler(async(req,res)=>{
 
-//     const {otp} =req.body;
-
-//     const user = await User.findOne({otp,otpExpires:{$gt:Date.now()}})
-
-//     if(!user){
-//         throw new ApiError(404,"Invalid or Incorrect OTP");
-//     }
-
-//     user.isOTPVerified=true;
-//     await user.save();
-
-//     return res.status(200).json(new ApiResponse(200,"OTP Verified successfully!!"))
-    
-// })
-
-// const resetPassWord=asyncHandler(async(req,res)=>{
-//         const{newPassword} =req.body;
-        
-//         const user = await User.findOne({otpExpires:{$gt:Date.now()},isOTPVerified:true})
-
-//         if(!user){
-//             throw new ApiError(400,"Invalid,expired OTP , or OTP not verified")
-//         }
-
-//         user.password = await bcrypt.hash(newPassword,10);
-
-//         user.otp = undefined;
-//         user.otpExpires=undefined;
-//         user.isOTPVerified=false;
-
-//         await user.save();
-
-//         return res.status(200).json(new ApiResponse(200,"PassWord Reset successfully !!"))
-// })
-
-
-// export {
-//     registerUser,
-//     loginUser,
-//     ForgotPassword,
-//     resetPassWord,
-//     verifyOTP,
-// };
+export {
+    getAllDataOfUserManagemenet,
+};

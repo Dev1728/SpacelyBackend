@@ -1,25 +1,24 @@
-// import admin from 'firebase-admin';
-// import dotenv from 'dotenv';
-// import fs from 'fs';
+import { initializeApp } from "firebase/app";
+import { getStorage } from "firebase/storage";
+import dotenv from 'dotenv';
 
-// // Load environment variables from .env file
-// dotenv.config(); 
+dotenv.config();
 
-// // Read the Firebase service account file (spacelyBackendFirebase.json)
-// const serviceAccount = JSON.parse(fs.readFileSync('./config/spacelyBackendFirebase.json', 'utf8'));
+// Firebase configuration
+const firebaseConfig = {
+  apiKey: process.env.API_KEY,
+  authDomain: process.env.AUTH_DOMAIN,
+  projectId: process.env.PROJECT_ID,
+  storageBucket: process.env.STORAGE_BUCKET,  // Make sure this is correct for Firebase Storage
+  messagingSenderId: process.env.MESSAGING_SENDER_ID,
+  appId: process.env.APP_ID,
+  measurementId: process.env.APP_MEASUREMENT_ID
+};
 
-// // Ensure private key formatting is correct
-// serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');  // Fix line breaks in the private key
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
 
-// // Initialize Firebase Admin SDK if not already initialized
-// if (!admin.apps.length) {
-//   admin.initializeApp({
-//     credential: admin.credential.cert(serviceAccount),
-//     storageBucket: process.env.FIREBASE_STORAGE_BUCKET, 
-//   });
-// }
+// Initialize Firebase Storage (for file uploads)
+const storage = getStorage(app);
 
-// // Initialize Firebase Storage
-// const bucket = admin.storage().bucket();
-// console.log("Firebase Bucket:", process.env.FIREBASE_STORAGE_BUCKET);
-// export { admin, bucket };
+export { app, storage };

@@ -40,9 +40,6 @@ const getAllBookingManagement =async (req, res) => {
             case 'username':
               query.userName = searchRegex;
               break;
-            case 'lastname':
-              query.lastName = searchRegex;
-              break;
             case 'email':
               query["userContact.email"] = searchRegex;
               break;

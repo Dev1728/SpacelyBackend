@@ -19,14 +19,14 @@ import bookingRouter from  './routes/bookingmanagement.route.js'
 import spaceRouter from './routes/space.route.js'
 import categoryRouter from './routes/category.route.js'
 import subCategoryRouter from './routes/subCategory.route.js'
-// import upload from './routes/file.route.js'
+import upload from './routes/file.route.js'
 //routes declaration
 app.use("/api/v1/space",spaceRouter);
 app.use("/api/v1/booking",bookingRouter);
 app.use("/api/v1/admin",adminRouter);
 app.use("/api/v1/category",categoryRouter);
 app.use("/api/v1/subcategory",subCategoryRouter);
-// app.use("/api/v1/upload",upload)
+app.use("/api/v1/upload",upload)
 
 
 export {app};  

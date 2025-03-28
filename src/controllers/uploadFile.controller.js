@@ -1,40 +1,47 @@
-// import { bucket } from "../../firebase.js"; // Firebase bucket
+import { storage } from '../../firebase.js'; // import Firebase storage
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 
-// export const uploadToFirebase = async (req, res) => {
-//   try {
-//     if (!req.file && !req.files) {
-//       return res.status(400).json({ success: false, message: "No file uploaded!" });
-//     }
+export const uploadFileMiddleware = async (files, quantity) => {
+  const urls = [];
 
-//     const files = req.file ? [req.file] : req.files; 
+  try {
+    if (quantity === 'single') {
+      const dateTime = Date.now();
+      const fileName = `uploads/${dateTime}_${files.originalname}`;
+      const storageRef = ref(storage, fileName);
 
-//     const uploadPromises = files.map((file) => {
-//       return new Promise((resolve, reject) => {
-//         const blob = bucket.file(`uploads/${Date.now()}_${file.originalname}`);
-//         const blobStream = blob.createWriteStream({
-//           metadata: { contentType: file.mimetype },
-//         });
+      const metadata = {
+        contentType: files.mimetype,
+      };
 
-//         blobStream.on("error", (err) => reject(err));
+      const uploadTask = uploadBytesResumable(storageRef, files.buffer, metadata);
 
-//         blobStream.on("finish", async () => {
-//           const publicUrl = `https://storage.googleapis.com/${bucket.name}/${blob.name}`;
-//           resolve(publicUrl); // Send URL for each uploaded file
-//         });
+      // Wait for the upload to complete
+      await uploadTask;
 
-//         blobStream.end(file.buffer);
-//       });
-//     });
+      const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+      urls.push(downloadURL);
+    } else if (quantity === 'multiple') {
+      for (let i = 0; i < files.length; i++) {
+        const dateTime = Date.now();
+        const fileName = `uploads/${dateTime}_${files[i].originalname}`;
+        const storageRef = ref(storage, fileName);
 
-//     const fileUrls = await Promise.all(uploadPromises);
+        const metadata = {
+          contentType: files[i].mimetype,
+        };
 
-//     res.status(200).json({
-//       success: true,
-//       message: "File(s) uploaded successfully!",
-//       urls: fileUrls, // Return the URLs for the uploaded files
-//     });
-//   } catch (error) {
-//     console.error("Upload Error:", error);
-//     res.status(500).json({ success: false, message: "Internal Server Error" });
-//   }
-// };
+        const uploadTask = uploadBytesResumable(storageRef, files[i].buffer, metadata);
+        await uploadTask;
+
+        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+        urls.push(downloadURL);
+      }
+    }
+
+    return urls;
+  } catch (error) {
+    console.error("Error uploading file(s):", error);
+    throw error;  // Re-throw the error to be handled by the calling function
+  }
+};
