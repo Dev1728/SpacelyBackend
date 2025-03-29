@@ -29,5 +29,11 @@ app.use("/api/v1/subcategory",subCategoryRouter);
 app.use("/api/v1/upload",upload)
 app.use("/api/v1/user",userRouter);
 
+//space Owner Routes
+
+import spaceOwner from './routes/SpaceOwnerRoutes/spaceOwner.route.js'
+
+app.use("/api/v2/spaceowner",spaceOwner);
+
 
 export {app};  
