@@ -1,5 +1,78 @@
 import { CategorySchema } from "../models/category.models.js";
 import mongoose from 'mongoose';
+
+
+
+const getAllCategoryByIDAndName = async (req, res) => {
+  try {
+    // Extract pagination and filter parameters from the query
+    const { page = 1, limit = 10, categoryName, searchKey, searchQuery } = req.query;
+
+    // Convert page and limit to integers
+    const pageNumber = parseInt(page);
+    const pageSize = parseInt(limit);
+
+    // Prepare query filters
+    let query = {};
+    if (categoryName) {
+      query.categoryName = { $regex: new RegExp(`^${categoryName}$`, 'i') }; // Case-insensitive match
+    }
+
+    if (searchQuery) {
+      // Create a case-insensitive regular expression for the search
+      const searchRegex = new RegExp(searchQuery, 'i');
+      
+      // If searchKey is provided, search only in that specific field
+      if (searchKey) {
+        switch (searchKey.toLowerCase()) {
+          case 'categoryname':
+            query.categoryName = searchRegex;
+            break;
+          default:
+            // If searchKey is not recognized, search in all fields
+            query.$or = [
+              { categoryName: searchRegex }
+            ];
+        }
+      } else {
+        // If no searchKey is provided, search in all fields
+        query.$or = [
+          { categoryName: searchRegex }
+        ];
+      }
+    }
+
+    // Fetch categories based on the filters and select only ID and categoryName
+    const categories = await CategorySchema.find(query)
+      .select('_id categoryName') // Only return the _id and categoryName fields
+      .sort({ createdAt: -1 })
+      .skip((pageNumber - 1) * pageSize) // Skip records based on page number
+      .limit(pageSize); // Limit the number of records per page
+
+    // Get total count of categories for pagination
+    const totalCategories = await CategorySchema.countDocuments(query);
+
+    // Return the categories with pagination data
+    return res.status(200).json({
+      status: true,
+      message: "Categories ID and Name fetched successfully.",
+      data: {
+        categories,
+        totalCategories,
+        currentPage: pageNumber,
+        totalPages: Math.ceil(totalCategories / pageSize),
+        pageSize: pageSize,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      status: false,
+      message: "Error fetching categories.",
+      error: error.message,
+    });
+  }
+};
 const getAllCategoryData = async (req, res) => {
   try {
     // Extract pagination and filter parameters from the query
@@ -190,4 +263,4 @@ const deleteCategory = async (req, res) => {
 
   
 
-export { getAllCategoryData,createCategory,viewCategory,updateCategory,deleteCategory };
+export {getAllCategoryByIDAndName, getAllCategoryData,createCategory,viewCategory,updateCategory,deleteCategory };

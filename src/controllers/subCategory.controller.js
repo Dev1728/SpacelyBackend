@@ -1,5 +1,76 @@
 import { SubCategorySchema } from "../models/subcategory.models.js";
 import mongoose from 'mongoose'
+
+const getAllSubCategoryByIDAndName = async (req, res) => {
+    try {
+      // Extract pagination and filter parameters from the query
+      const { page = 1, limit = 10, subCategoryName, searchKey, searchQuery } = req.query;
+  
+      // Convert page and limit to integers
+      const pageNumber = parseInt(page);
+      const pageSize = parseInt(limit);
+  
+      // Prepare query filters
+      let query = {};
+      if (subCategoryName) {
+        query.subCategoryName = { $regex: new RegExp(`^${subCategoryName}$`, 'i') }; // Case-insensitive match
+      }
+  
+      if (searchQuery) {
+        // Create a case-insensitive regular expression for the search
+        const searchRegex = new RegExp(searchQuery, 'i');
+        
+        // If searchKey is provided, search only in that specific field
+        if (searchKey) {
+          switch (searchKey.toLowerCase()) {
+            case 'subcategoryname':
+              query.subCategoryName = searchRegex;
+              break;
+            default:
+              // If searchKey is not recognized, search in all fields
+              query.$or = [
+                { subCategoryName: searchRegex }
+              ];
+          }
+        } else {
+          // If no searchKey is provided, search in all fields
+          query.$or = [
+            { subCategoryName: searchRegex }
+          ];
+        }
+      }
+  
+      // Fetch subcategories based on the filters and select only ID and subcategoryName
+      const subcategories = await SubCategorySchema.find(query)
+        .select('_id subCategoryName') // Ensure you're using the correct field name: subCategoryName
+        .sort({ createdAt: -1 })
+        .skip((pageNumber - 1) * pageSize) // Skip records based on page number
+        .limit(pageSize); // Limit the number of records per page
+  
+      // Get total count of subcategories for pagination
+      const totalSubCategories = await SubCategorySchema.countDocuments(query);
+  
+      // Return the subcategories with pagination data
+      return res.status(200).json({
+        status: true,
+        message: "SubCategories ID and Name fetched successfully.",
+        data: {
+          subcategories,
+          totalSubCategories,
+          currentPage: pageNumber,
+          totalPages: Math.ceil(totalSubCategories / pageSize),
+          pageSize: pageSize,
+        },
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({
+        status: false,
+        message: "Error fetching subcategories.",
+        error: error.message,
+      });
+    }
+  };
 const getAllSubCategoryData = async (req, res) => {
     try {
         // Extract pagination and filter parameters from the query
@@ -198,4 +269,4 @@ const deleteSubCategory = async (req, res) => {
   }
 };
 
-export {getAllSubCategoryData,createSub,viewSubCategory,updateSubCategory,deleteSubCategory};
+export {getAllSubCategoryByIDAndName,getAllSubCategoryData,createSub,viewSubCategory,updateSubCategory,deleteSubCategory};

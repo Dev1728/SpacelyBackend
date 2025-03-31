@@ -74,10 +74,10 @@ const login = async (req, res) => {
     isExist.otpExpires = otpExpires;
     await isExist.save();
 
-    const message = `<p>Your OTP and verifiedId for login are: <b>${otp}</b>, VerifiedID: <b>${verifiedId}</b>. This OTP is valid for 10 minutes.</p>`;
+    const message = `<p>Your OTP for login are: <b>${otp}</b>. This OTP is valid for 10 minutes.</p>`;
     await sendEmail(email, "Login OTP and VerifiedID", message);
 
-    return res.status(200).json({ success: true, message: "OTP sent to email" });
+    return res.status(200).json({ success: true, data:verifiedId , message: "OTP sent to email" });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ success: false, message: "Internal Server Error" });
@@ -118,4 +118,34 @@ const verifyOTP = async (req, res) => {
   }
 };
 
-export { createProfile, login, verifyOTP };
+const updateProfile = async(req,res)=>{
+    try {
+      const {profileId} = req.params;
+  
+      if(!profileId){
+        return res.status(404).json({success:false,message:"Profile id is required "})
+      }
+      const updateData = req.body;
+  
+      if(!Object.keys(updateData).length === 0){
+          return res.status(401).json({success:false,message:"Atleast one field is required"});
+      }
+  
+      const ownerProfile = await SpaceOwnerSchema.findByIdAndUpdate(
+        profileId,
+        {$set:updateData},
+        {new:true, runValidators:true}
+      )
+  
+      if(!ownerProfile){
+          return res.status(500).json({success:false,message:"something went wrong with update owner"});
+      }
+  
+      return res.status(200).json({success:true,data:ownerProfile,message:"Owner profile updated Successfully"})
+    } catch (error) {
+      console.log(error);
+      return res.status(500).json({success:false,message:"Internal Server error"});
+    }
+
+}
+export { createProfile, login, verifyOTP ,updateProfile};

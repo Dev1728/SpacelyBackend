@@ -32,8 +32,10 @@ app.use("/api/v1/user",userRouter);
 //space Owner Routes
 
 import spaceOwner from './routes/SpaceOwnerRoutes/spaceOwner.route.js'
+import spaceOwenerVenue from './routes/SpaceOwnerRoutes/space.route.js';
 
 app.use("/api/v2/spaceowner",spaceOwner);
+app.use("/api/v2/space",spaceOwenerVenue);
 
 
 export {app};  
